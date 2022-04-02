@@ -3,25 +3,37 @@ const regs = @import("registers.zig");
 pub fn main() void {
     systemInit();
 
-    // Enable GPIOD port
-    regs.RCC.AHB1ENR.modify(.{ .GPIODEN = 1 });
+    // Enable GPIOB port
+    regs.RCC.AHB2ENR.modify(.{ .GPIOBEN = 1 });
 
-    // Set pin 12/13/14/15 mode to general purpose output
-    regs.GPIOD.MODER.modify(.{ .MODER12 = 0b01, .MODER13 = 0b01, .MODER14 = 0b01, .MODER15 = 0b01 });
+    // Set pin 2 mode to general purpose output
+    regs.GPIOB.MODER.modify(.{
+        .MODER0 = 0b01, 
+        .MODER1 = 0b01, 
+        .MODER2 = 0b01, 
+        .MODER3 = 0b01, 
+        .MODER4 = 0b01, 
+        .MODER5 = 0b01, 
+        .MODER6 = 0b01, 
+        .MODER7 = 0b01, 
+        .MODER8 = 0b01, 
+        .MODER9 = 0b01, 
+        .MODER10 = 0b01, 
+        .MODER11 = 0b01, 
+        .MODER12 = 0b01, 
+        .MODER13 = 0b01, 
+        .MODER14 = 0b01, 
+        .MODER15 = 0b01, 
+    });
 
-    // Set pin 12 and 14
-    regs.GPIOD.BSRR.modify(.{ .BS12 = 1, .BS14 = 1 });
+    // Set pin 2
+    regs.GPIOB.BSRR.modify(.{ .BS2 = 1 });
 
     while (true) {
         // Read the LED state
-        var leds_state = regs.GPIOD.ODR.read();
+        var leds_state = regs.GPIOB.ODR.read_raw();
         // Set the LED output to the negation of the currrent output
-        regs.GPIOD.ODR.modify(.{
-            .ODR12 = ~leds_state.ODR12,
-            .ODR13 = ~leds_state.ODR13,
-            .ODR14 = ~leds_state.ODR14,
-            .ODR15 = ~leds_state.ODR15,
-        });
+        regs.GPIOB.ODR.write_raw(~leds_state);
 
         // Sleep for some time
         var i: u32 = 0;
@@ -50,7 +62,7 @@ fn systemInit() void {
     while (regs.RCC.CR.read().HSIRDY != 1) {}
 
     // Select HSI as clock source
-    regs.RCC.CFGR.modify(.{ .SW0 = 0, .SW1 = 0 });
+    // regs.RCC.CFGR.modify(.{ .SW0 = 0, .SW1 = 0 });
 
     // Enable external high-speed oscillator (HSE)
     regs.RCC.CR.modify(.{ .HSEON = 1 });
@@ -69,29 +81,13 @@ fn systemInit() void {
     regs.RCC.PLLCFGR.modify(.{
         .PLLSRC = 1,
         // PLLM = 8 = 0b001000
-        .PLLM0 = 0,
-        .PLLM1 = 0,
-        .PLLM2 = 0,
-        .PLLM3 = 1,
-        .PLLM4 = 0,
-        .PLLM5 = 0,
+        .PLLM = 4,
         // PLLN = 336 = 0b101010000
-        .PLLN0 = 0,
-        .PLLN1 = 0,
-        .PLLN2 = 0,
-        .PLLN3 = 0,
-        .PLLN4 = 1,
-        .PLLN5 = 0,
-        .PLLN6 = 1,
-        .PLLN7 = 0,
-        .PLLN8 = 1,
+        .PLLN = 120,
         // PLLP = 2 = 0b10
-        .PLLP0 = 0,
-        .PLLP1 = 1,
+        .PLLP = 1,
         // PLLQ = 7 = 0b111
-        .PLLQ0 = 1,
-        .PLLQ1 = 1,
-        .PLLQ2 = 1,
+        .PLLQ = 2,
     });
 
     // Enable PLL
@@ -104,11 +100,11 @@ fn systemInit() void {
     regs.FLASH.ACR.modify(.{ .DCEN = 1, .ICEN = 1, .LATENCY = 5 });
 
     // Select PLL as clock source
-    regs.RCC.CFGR.modify(.{ .SW1 = 1, .SW0 = 0 });
+    regs.RCC.CFGR.modify(.{ .SW = 2 });
 
     // Wait for PLL selected as clock source
     var cfgr = regs.RCC.CFGR.read();
-    while (cfgr.SWS1 != 1 and cfgr.SWS0 != 0) : (cfgr = regs.RCC.CFGR.read()) {}
+    while (cfgr.SWS != 1) : (cfgr = regs.RCC.CFGR.read()) {}
 
     // Disable HSI
     regs.RCC.CR.modify(.{ .HSION = 0 });
